@@ -9,6 +9,9 @@ The format is based on Keep a Changelog and this project adheres to Semantic Ver
 ### Changed
 - Uses Approov iOS SDK 3.7.0, which requires iOS 12.0 or later; the minimum iOS version is now 12.0.
 
+### Fixed
+- Requests made through `ApproovURLSession` are no longer sent without an Approov token when an instance wraps the session's tasks through a proxy. The proxy does not report the task's state changes, which are reported only on the wrapped task, so the observation registered on the proxy never fired. The wrapped task is now observed, and a wrapped task that cannot be unwrapped is cancelled with an error instead of being sent.
+
 ## [3.5.13] - 2026-09-25
 
 ### Fixed

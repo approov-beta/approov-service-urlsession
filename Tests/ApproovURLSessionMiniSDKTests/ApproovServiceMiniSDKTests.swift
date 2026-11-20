@@ -1405,6 +1405,51 @@ final class ApproovServiceMiniSDKTests: XCTestCase {
         )
     }
 
+    // MARK: - Tasks wrapped through a proxy
+
+    /// A genuine task is observed directly.
+    func testObservableTaskOfAGenuineTaskIsTheTaskItself() {
+        let task = URLSession(configuration: .ephemeral).dataTask(with: URL(string: targetURLString)!)
+        XCTAssertTrue(ApproovSessionTaskObserver.observableTask(for: task) === task)
+        task.cancel()
+    }
+
+    /// A proxy that exposes the task it wraps is observed through that task, because state
+    /// changes are only reported on the wrapped task.
+    func testObservableTaskUnwrapsAWrapperThatExposesItsTask() {
+        let inner = URLSession(configuration: .ephemeral).dataTask(with: URL(string: targetURLString)!)
+        let wrapper = ExposingTaskWrapper(inner)
+        let wrapped = unsafeBitCast(wrapper, to: URLSessionTask.self)
+        XCTAssertTrue(ApproovSessionTaskObserver.observableTask(for: wrapped) === inner)
+        inner.cancel()
+    }
+
+    /// A wrapper that does not expose its task cannot be observed.
+    func testObservableTaskIsNilForAWrapperThatHidesItsTask() {
+        let wrapped = unsafeBitCast(HidingTaskWrapper(), to: URLSessionTask.self)
+        XCTAssertNil(ApproovSessionTaskObserver.observableTask(for: wrapped))
+    }
+
+    /// A task that cannot be observed must never be sent without Approov: it is cancelled and
+    /// its completion handler receives an error at once.
+    func testUnobservableTaskIsCancelledAndFailsWithAnError() {
+        let hiding = HidingTaskWrapper()
+        let wrapped = unsafeBitCast(hiding, to: URLSessionTask.self)
+        var received: Error?
+        let gate = ApproovTaskCompletionGate<Data> { _, _, error in received = error }
+        ApproovURLSession.taskObserver.observe(
+            task: wrapped,
+            pinningSession: URLSession(configuration: .ephemeral),
+            sessionConfig: .ephemeral,
+            completionHandler: gate
+        )
+        XCTAssertTrue(hiding.cancelled, "an unobservable task must be cancelled")
+        guard case .permanentError(let message)? = received as? ApproovError else {
+            return XCTFail("expected ApproovError.permanentError, got \(String(describing: received))")
+        }
+        XCTAssertTrue(message.contains("HidingTaskWrapper"))
+    }
+
     // MARK: - Async convenience methods with a task delegate
 
     /// Every async convenience method used to build a new URLSession per call whenever a delegate
@@ -1626,4 +1671,17 @@ private final class MetricsRecordingDelegate: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         onMetrics?()
     }
+}
+
+/// Stands in for a proxy that exposes the task it wraps.
+private final class ExposingTaskWrapper: NSObject {
+    private let inner: URLSessionTask
+    init(_ inner: URLSessionTask) { self.inner = inner }
+    @objc func wrappedTask() -> URLSessionTask { inner }
+}
+
+/// Stands in for a proxy that hides the task it wraps.
+private final class HidingTaskWrapper: NSObject {
+    private(set) var cancelled = false
+    @objc func cancel() { cancelled = true }
 }
