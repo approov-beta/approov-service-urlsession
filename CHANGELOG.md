@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 
 The format is based on Keep a Changelog and this project adheres to Semantic Versioning.
 
+## [3.6.0] - 2026-11-20
+
+### Changed
+- Uses Approov iOS SDK 3.7.0, which requires iOS 12.0 or later; the minimum iOS version is now 12.0.
+
 ## [3.5.13] - 2026-09-25
 
 ### Fixed

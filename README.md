@@ -7,11 +7,16 @@ Please see the [Quickstart](https://github.com/approov/quickstart-ios-swift-urls
 ## ADDING APPROOV SERVICE DEPENDENCY
 The Approov integration is available via the [`Swift Package Manager`](https://developer.apple.com/documentation/swift_packages/adding_package_dependencies_to_your_app). This allows inclusion into the project by specifying a dependency in the `File -> Add Packages...` Xcode option.
 
-Enter the repository `https://github.com/approov/approov-service-urlsession.git` into the search box and latest available version will be automatically selected for you.
+Enter the repository `https://github.com/approov-beta/approov-service-urlsession.git` into the search box and latest available version will be automatically selected for you.
 
 Once you click `Add Package` the last step will confirm the package product and target selection. The `approov-service-urlsession` is actually an open source wrapper layer that allows you to easily use Approov with `URLSession`. This has a further dependency to the closed source [Approov SDK](https://github.com/approov/approov-ios-sdk).
 
-Alternatively, use `cocoapods` and add the package dependencies similar to how they are used in the example [`shapes-app/Podfile`](https://github.com/approov/quickstart-ios-swift-urlsession/blob/master/shapes-app/Podfile) in the [Quickstart](https://github.com/approov/quickstart-ios-swift-urlsession) repository.
+Alternatively, use `cocoapods`. Neither pod is on CocoaPods trunk, so take both from GitHub in your `Podfile`:
+
+```ruby
+pod 'approov-ios-sdk', :git => 'https://github.com/approov/approov-ios-sdk.git', :tag => '3.7.0'
+pod 'ApproovURLSession', :git => 'https://github.com/approov-beta/approov-service-urlsession.git', :tag => '3.6.0'
+```
 
 ## USING APPROOV SERVICE
 The `ApproovURLSession` class mimics the interface of the `URLSession` class provided by Apple but includes an additional Approov attestation calls. The simplest way to use the `ApproovURLSession` class is to find and replace all the `URLSession` construction calls with `ApproovURLSession`. 
